@@ -1,0 +1,7 @@
+"0","meteo <- read_csv2("
+"0","  ""data/stations_janvier2026.csv"","
+"0","  skip = 2,"
+"0","  na = c("""", ""NA"", ""n/a"", ""-""),"
+"0","  locale = locale(decimal_mark = "","", encoding = ""latin1"", date_format = ""%d/%m/%Y""),"
+"0","  col_types = cols(station = col_character(), date = col_date(), .default = col_double())"
+"0",")"

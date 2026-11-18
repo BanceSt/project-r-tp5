@@ -1,0 +1,7 @@
+"0","jour_plus_froid_station <- meteo |>"
+"0","  group_by(station) |>"
+"0","  summarise("
+"0","    date = date[which.min(temp_min)],"
+"0","    temperature = min(temp_min)"
+"0","  )"
+"0","jour_plus_froid_station"

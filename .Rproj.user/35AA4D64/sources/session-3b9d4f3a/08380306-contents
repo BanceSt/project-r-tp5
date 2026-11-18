@@ -1,0 +1,146 @@
+# Partie A : Importer des fichiers texte récalcitrants
+
+## A1
+
+```{r}
+setwd("C:/Users/Bance/Documents/coursR/data")
+# a. Fichier de référence (colonnes séparées par des tabulations)
+auto2004 <- read.table("data/auto2004_original.txt", header = TRUE, sep = "\t")
+
+# b. Trois lignes de commentaires avant la ligne des noms
+auto2004_l3 <- read.table("data/auto2004_original_ligne3.txt", header = TRUE, sep = "\t", skip = 3)
+
+# c. Pas de ligne de noms : on reprend ceux de la référence
+auto2004_sans_nom <- read.table("data/auto2004_sans_nom.txt", header = FALSE, sep = "\t",
+                                col.names = names(auto2004))
+
+# d. Valeurs manquantes laissées vides (NA dans les colonnes numériques)
+auto2004_dm <- read.table("data/auto2004_don_manquante.txt", header = TRUE, sep = "\t")
+
+# e. Valeurs manquantes codées 99999
+auto2004_d99 <- read.table("data/auto2004_don_manquan_99999.txt", header = TRUE, sep = "\t",
+                           na.strings = "99999")
+```
+
+```{r}
+# Noms, dimensions et types comparés à la référence, une instruction par fichier
+identical(list(names(auto2004_l3), dim(auto2004_l3), sapply(auto2004_l3, class)),
+          list(names(auto2004), dim(auto2004), sapply(auto2004, class)))
+identical(list(names(auto2004_sans_nom), dim(auto2004_sans_nom), sapply(auto2004_sans_nom, class)),
+          list(names(auto2004), dim(auto2004), sapply(auto2004, class)))
+identical(list(names(auto2004_dm), dim(auto2004_dm), sapply(auto2004_dm, class)),
+          list(names(auto2004), dim(auto2004), sapply(auto2004, class)))
+identical(list(names(auto2004_d99), dim(auto2004_d99), sapply(auto2004_d99, class)),
+          list(names(auto2004), dim(auto2004), sapply(auto2004, class)))
+```
+
+## A2
+
+```{r}
+# a. Nombre de valeurs manquantes et positions
+n_dm <- sum(is.na(auto2004_dm))
+n_d99 <- sum(is.na(auto2004_d99))
+memes_positions <- identical(is.na(auto2004_dm), is.na(auto2004_d99))
+```
+
+`auto2004_dm` contient `r n_dm` valeurs manquantes et `auto2004_d99` en contient `r n_d99`. Leurs positions sont `r if (memes_positions) "identiques" else "différentes"`.
+
+```{r}
+# b. Modèle et valeurs originales des cases manquantes
+manquants <- which(is.na(auto2004_dm), arr.ind = TRUE)
+data.frame(
+  Modele = auto2004$Modele[manquants[, "row"]],
+  variable = names(auto2004)[manquants[, "col"]],
+  valeur_originale = mapply(function(i, j) auto2004[i, j], manquants[, "row"], manquants[, "col"])
+)
+```
+
+```{r}
+# c. Puissance moyenne avec 99999 gardé comme une vraie valeur
+d99_brut <- read.table("data/auto2004_don_manquan_99999.txt", header = TRUE, sep = "\t")
+moy_brute <- mean(d99_brut$Puissance)
+moy_ref <- mean(auto2004$Puissance)
+```
+
+Sans `na.strings`, la puissance moyenne vaut `r round(moy_brute, 1)` au lieu de `r round(moy_ref, 1)`, soit une erreur de `r round(moy_brute - moy_ref, 1)`.
+
+## A3
+
+```{r}
+# a. Import en un seul appel
+meteo <- read_csv2(
+  "data/stations_janvier2026.csv",
+  skip = 2,
+  na = c("", "NA", "n/a", "-"),
+  locale = locale(decimal_mark = ",", encoding = "latin1", date_format = "%d/%m/%Y"),
+  col_types = cols(station = col_character(), date = col_date(), .default = col_double())
+)
+```
+
+```{r}
+# b. Vérifications
+dim(meteo)
+sapply(meteo, class)
+colSums(is.na(meteo))
+range(meteo$date)
+unique(meteo$station)
+```
+
+## A4
+
+```{r}
+# a. Bilan par station
+bilan_meteo <- meteo |>
+  group_by(station) |>
+  summarise(
+    tmin_moyenne = mean(temp_min, na.rm = TRUE),
+    tmax_moyenne = mean(temp_max, na.rm = TRUE),
+    pluie_cumul = sum(pluie_mm, na.rm = TRUE),
+    jours_gel = sum(temp_min < 0, na.rm = TRUE),
+    jours_pluie = sum(pluie_mm > 0, na.rm = TRUE)
+  )
+bilan_meteo
+```
+
+```{r}
+# b. Stations extrêmes
+station_gel <- bilan_meteo$station[which.max(bilan_meteo$jours_gel)]
+station_pluie <- bilan_meteo$station[which.max(bilan_meteo$pluie_cumul)]
+```
+
+La station avec le plus de jours de gel est `r station_gel` et celle avec le plus de pluie est `r station_pluie`.
+
+```{r}
+# c. Jour le plus froid de chaque station
+froid <- meteo |>
+  group_by(station) |>
+  slice_min(temp_min, n = 1, with_ties = FALSE) |>
+  select(station, date, temp_min)
+froid
+```
+
+Les jours les plus froids sont : `r paste0(froid$station, " (", format(froid$date, "%d/%m/%Y"), ", ", froid$temp_min, " °C)", collapse = " ; ")`.
+
+## A5
+
+`p1` utilise `read.csv()`, qui attend des colonnes séparées par des virgules. Dans ce fichier, le séparateur est le point-virgule et la virgule sert de décimale : les décimales coupent les lignes en deux et le tableau est mal découpé.
+
+`p2` utilise le bon format français, mais `n/a` n'est pas reconnu comme une valeur manquante. La colonne `stock` est donc lue comme du texte au lieu de nombres.
+
+`p3` reconnaît `n/a`, mais `skip = 1` saute la ligne des noms de colonnes : la première ligne de données devient alors l'en-tête.
+
+```{r}
+# Vérification des résultats faux
+str(p1 <- read.csv("data/prix_fr.csv"))
+str(p2 <- read.csv2("data/prix_fr.csv"))
+glimpse(p3 <- read_csv2("data/prix_fr.csv", na = "n/a", skip = 1))
+```
+
+```{r}
+# Corrections
+p_base <- read.csv2("data/prix_fr.csv", na.strings = "n/a", fileEncoding = "UTF-8")
+p_readr <- read_csv2("data/prix_fr.csv", na = "n/a")
+
+str(p_base)
+glimpse(p_readr)
+```

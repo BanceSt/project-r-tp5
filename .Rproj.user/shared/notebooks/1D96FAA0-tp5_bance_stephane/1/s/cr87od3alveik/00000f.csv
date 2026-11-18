@@ -1,0 +1,8 @@
+"0","pluie_2024 <- read_excel(""data/pluie_mensuelle.xlsx"", sheet = ""2024"", skip = 3) %>%"
+"0","  mutate(annee = 2024)"
+"0",""
+"0","pluie_2025 <- read_excel(""data/pluie_mensuelle.xlsx"", sheet = ""2025"", skip = 3) %>%"
+"0","  mutate(annee = 2025)"
+"0",""
+"0","pluie2024_2025 <- bind_rows(pluie_2024, pluie_2025) %>%"
+"0","  relocate(annee)"

@@ -1,0 +1,175 @@
+---
+title: "tp5_bance_stephane"
+author: "Stéphane BANCE"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+```{r setup, include=FALSE}
+library("readxl")
+library("tidyverse")
+```
+
+# Partie A : 
+
+## A1
+
+```{r}
+# a
+auto2004 <- read.table("data/auto2004_original.txt", header = TRUE, sep = "\t")
+
+# b
+auto2004_l3 <- read.table("data/auto2004_original_ligne3.txt", header = TRUE, sep = "\t", skip = 3)
+
+# c
+auto2004_sans_nom <- read.table("data/auto2004_sans_nom.txt", header = FALSE, sep = "\t",
+                                col.names = names(auto2004))
+
+# d
+auto2004_dm <- read.table("data/auto2004_don_manquante.txt", header = TRUE, sep = "\t")
+
+# e
+auto2004_d99 <- read.table("data/auto2004_don_manquan_99999.txt", header = TRUE, sep = "\t",
+                           na.strings = "99999")
+```
+
+```{r}
+identical(list(names(auto2004_l3), dim(auto2004_l3), sapply(auto2004_l3, class)),
+          list(names(auto2004), dim(auto2004), sapply(auto2004, class)))
+identical(list(names(auto2004_sans_nom), dim(auto2004_sans_nom), sapply(auto2004_sans_nom, class)),
+          list(names(auto2004), dim(auto2004), sapply(auto2004, class)))
+identical(list(names(auto2004_dm), dim(auto2004_dm), sapply(auto2004_dm, class)),
+          list(names(auto2004), dim(auto2004), sapply(auto2004, class)))
+identical(list(names(auto2004_d99), dim(auto2004_d99), sapply(auto2004_d99, class)),
+          list(names(auto2004), dim(auto2004), sapply(auto2004, class)))
+```
+
+## A2
+
+a.
+
+
+auto2004_dm contient `r sum(is.na(auto2004_dm))` valeurs manquantes et auto2004_d99 en contient `r sum(is.na(auto2004_d99))`. Leurs positions sont `r if (identical(is.na(auto2004_dm), is.na(auto2004_d99))) "identiques" else "différentes"`.
+
+
+b.
+
+```{r}
+manquants <- which(is.na(auto2004_dm), arr.ind = TRUE)
+data.frame(
+  Modele = auto2004$Modele[manquants[, "row"]],
+  variable = names(auto2004)[manquants[, "col"]],
+  valeur_originale = mapply(function(i, j) auto2004[i, j], manquants[, "row"], manquants[, "col"])
+)
+```
+
+c.
+
+```{r}
+auto2024_d99_brut <- read.table("data/auto2004_don_manquan_99999.txt", header = TRUE, sep = "\t")
+moy_brute <- mean(auto2024_d99_brut$Puissance)
+moy_ref <- mean(auto2004$Puissance)
+```
+
+Sans na.strings, la puissance moyenne vaut `r format(round(moy_brute, 1), scientific = FALSE, big.mark = " ")` au lieu de `r format(round(moy_ref, 1), scientific = FALSE, big.mark = " ")`, soit une erreur de `r format(round(moy_brute - moy_ref, 1), scientific = FALSE, big.mark = " ")`.
+
+
+## A3
+
+a.
+
+```{r}
+meteo <- read_csv2(
+  "data/stations_janvier2026.csv",
+  skip = 2,
+  na = c("", "NA", "n/a", "-"),
+  locale = locale(decimal_mark = ",", encoding = "latin1", date_format = "%d/%m/%Y"),
+  col_types = cols(station = col_character(), date = col_date(), .default = col_double())
+)
+```
+
+b.
+```{r}
+dim(meteo)
+sapply(meteo, class)
+colSums(is.na(meteo))
+range(meteo$date)
+unique(meteo$station)
+```
+
+## A4
+
+a.
+```{r}
+bilan_meteo <- meteo |>
+  group_by(station) |>
+  summarise(
+    temp_min_moyenne = mean(temp_min, na.rm = TRUE),
+    temp_max_moyenne = mean(temp_max, na.rm = TRUE),
+    pluie_cumul = sum(pluie_mm, na.rm = TRUE),
+    jours_gel = sum(temp_min < 0, na.rm = TRUE),
+    jours_pluie = sum(pluie_mm > 0, na.rm = TRUE)
+  )
+bilan_meteo
+```
+
+B.
+
+`r bilan_meteo$station[which.max(bilan_meteo$jours_gel)]` est la station avec le plus grands nombre de jours de gel avec `r max(bilan_meteo$jours_gel)` jour(s).
+
+`r bilan_meteo$station[which.max(bilan_meteo$jours_pluie)]` est la station avec le plus grands nombre de jours de gel avec `r max(bilan_meteo$jours_pluie)` jour(s).
+
+C.
+```{r}
+jour_plus_froid_station <- meteo |>
+  group_by(station) |>
+  summarise(
+    date = date[which.min(temp_min)],
+    temperature = min(temp_min)
+  )
+jour_plus_froid_station
+```
+Les jours les plus froids sont : `r paste0(jour_plus_froid_station$station, " (", format(jour_plus_froid_station$date, "%d/%m/%Y"), ", ", jour_plus_froid_station$temperature, " °C)", collapse = " ; ")`.
+
+
+## A5
+
+p1 utilise `read.csv()`, qui attend des colonnes séparées par des virgules et ne gére pas les n/a. Ce fichier est un csv "français". Donc il faut utiliser csv2
+
+p2 utilise le bon format, mais les n/a ne sont pas gérés.
+
+p3 reconnaît les n/a, mais avec skip = 1 il saute la ligne des noms de colonnes. donc il faut juste enlever skip = 1.
+
+```{r}
+str(p1 <- read.csv("data/prix_fr.csv"))
+str(p2 <- read.csv2("data/prix_fr.csv"))
+glimpse(p3 <- read_csv2("data/prix_fr.csv", na = "n/a", skip = 1))
+```
+```{r}
+p_base <- read.csv2("data/prix_fr.csv", na.strings = "n/a", fileEncoding = "UTF-8")
+p_readr <- read_csv2("data/prix_fr.csv", na = "n/a")
+
+str(p_base)
+glimpse(p_readr)
+```
+
+## Partie B
+
+a.
+Il y a 2 pages, une 2024 et 2025. Toutes les deux commencent à la quatrième lignes.
+
+b.
+```{r}
+pluie_2024 <- read_excel("data/pluie_mensuelle.xlsx", sheet = "2024", skip = 3) %>%
+  mutate(annee = 2024)
+
+pluie_2025 <- read_excel("data/pluie_mensuelle.xlsx", sheet = "2025", skip = 3) %>%
+  mutate(annee = 2025)
+
+pluie2024_2025 <- bind_rows(pluie_2024, pluie_2025) %>%
+  relocate(annee)
+pluie2024_2025
+```
+
+

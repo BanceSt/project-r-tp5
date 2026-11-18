@@ -1,0 +1,139 @@
+# Partie A : Importer des fichiers texte récalcitrants
+
+## A1
+
+```{r}
+# a. Fichier de référence
+ref <- read.table("data/auto2004_original.txt", header = TRUE)
+
+# b. Le tableau commence à la ligne 3
+ligne3 <- read.table("data/auto2004_original_ligne3.txt", header = TRUE, skip = 2)
+
+# c. Pas de ligne de noms : on reprend ceux de la référence
+sans_nom <- read.table("data/auto2004_sans_nom.txt", header = FALSE, col.names = names(ref))
+
+# d. Valeurs manquantes codées autrement que par NA
+dm <- read.table("data/auto2004_don_manquante.txt", header = TRUE,
+                 na.strings = c("NA", ".", "?"))
+
+# e. Valeurs manquantes codées 99999
+d99 <- read.table("data/auto2004_don_manquan_99999.txt", header = TRUE,
+                  na.strings = "99999")
+```
+
+```{r}
+# Noms, dimensions et types comparés à la référence, une instruction par fichier
+identical(list(names(ligne3), dim(ligne3), sapply(ligne3, class)),
+          list(names(ref), dim(ref), sapply(ref, class)))
+identical(list(names(sans_nom), dim(sans_nom), sapply(sans_nom, class)),
+          list(names(ref), dim(ref), sapply(ref, class)))
+identical(list(names(dm), dim(dm), sapply(dm, class)),
+          list(names(ref), dim(ref), sapply(ref, class)))
+identical(list(names(d99), dim(d99), sapply(d99, class)),
+          list(names(ref), dim(ref), sapply(ref, class)))
+```
+
+## A2
+
+```{r}
+# a. Nombre de valeurs manquantes et positions
+n_dm <- sum(is.na(dm))
+n_d99 <- sum(is.na(d99))
+memes_positions <- identical(is.na(dm), is.na(d99))
+```
+
+`dm` contient `r n_dm` valeurs manquantes et `d99` en contient `r n_d99`. Leurs positions sont `r if (memes_positions) "identiques" else "différentes"`.
+
+```{r}
+# b. Modèle et valeurs originales des cases manquantes
+manquants <- which(is.na(dm), arr.ind = TRUE)
+data.frame(
+  modele = ref[[1]][manquants[, "row"]],
+  variable = names(ref)[manquants[, "col"]],
+  valeur_originale = mapply(function(i, j) ref[i, j], manquants[, "row"], manquants[, "col"])
+)
+```
+
+```{r}
+# c. Puissance moyenne avec 99999 gardé comme une vraie valeur
+d99_brut <- read.table("data/auto2004_don_manquan_99999.txt", header = TRUE)
+moy_brute <- mean(d99_brut$puissance)
+moy_ref <- mean(ref$puissance)
+```
+
+Sans `na.strings`, la puissance moyenne vaut `r round(moy_brute, 1)` au lieu de `r round(moy_ref, 1)`, soit une erreur de `r round(moy_brute - moy_ref, 1)`.
+
+## A3
+
+```{r}
+# a. Import en un seul appel
+meteo <- read_csv2(
+  "data/stations_janvier2026.csv",
+  comment = "#",
+  na = c("", "NA", "-999"),
+  locale = locale(decimal_mark = ",", encoding = "latin1", date_format = "%d/%m/%Y"),
+  col_types = cols(date = col_date(), station = col_character(), .default = col_double())
+)
+```
+
+```{r}
+# b. Vérifications
+dim(meteo)
+sapply(meteo, class)
+colSums(is.na(meteo))
+range(meteo$date)
+unique(meteo$station)
+```
+
+## A4
+
+```{r}
+# a. Bilan par station
+bilan_meteo <- meteo |>
+  group_by(station) |>
+  summarise(
+    tmin_moyenne = mean(temp_min, na.rm = TRUE),
+    tmax_moyenne = mean(temp_max, na.rm = TRUE),
+    pluie_cumul = sum(pluie_mm, na.rm = TRUE),
+    jours_gel = sum(temp_min < 0, na.rm = TRUE),
+    jours_pluie = sum(pluie_mm > 0, na.rm = TRUE)
+  )
+bilan_meteo
+```
+
+```{r}
+# b. Stations extrêmes
+station_gel <- bilan_meteo$station[which.max(bilan_meteo$jours_gel)]
+station_pluie <- bilan_meteo$station[which.max(bilan_meteo$pluie_cumul)]
+```
+
+La station avec le plus de jours de gel est `r station_gel` et celle avec le plus de pluie est `r station_pluie`.
+
+```{r}
+# c. Jour le plus froid de chaque station
+froid <- meteo |>
+  group_by(station) |>
+  slice_min(temp_min, n = 1, with_ties = FALSE) |>
+  select(station, date, temp_min)
+froid
+```
+
+Les jours les plus froids sont : `r paste0(froid$station, " (", format(froid$date, "%d/%m/%Y"), ", ", froid$temp_min, " °C)", collapse = " ; ")`.
+
+## A5
+
+`p1` utilise `read.csv()`, qui attend des colonnes séparées par des virgules et des décimales avec un point. Dans un fichier français, le séparateur est le point-virgule et la décimale est la virgule : le tableau est donc mal découpé (tout dans une seule colonne, ou des nombres coupés en deux).
+
+`p2` utilise le bon format français, mais `read.csv2()` ne sait pas que `n/a` signifie « manquant ». Les colonnes concernées sont donc lues comme du texte au lieu de nombres.
+
+`p3` reconnaît `n/a`, mais `skip = 1` saute la première ligne du fichier, c'est-à-dire la ligne des noms de colonnes : la première ligne de données devient alors l'en-tête.
+
+```{r}
+# Corrections
+p1 <- read.csv2("data/prix_fr.csv", na.strings = "n/a")
+p2 <- p1
+p3 <- read_csv2("data/prix_fr.csv", na = "n/a")
+
+str(p1)
+glimpse(p3)
+```

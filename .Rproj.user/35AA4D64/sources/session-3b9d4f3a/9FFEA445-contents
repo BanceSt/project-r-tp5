@@ -11,3 +11,25 @@ library("readxl")
 library("tidyverse")
 ```
 
+# Partie A : 
+
+## A1
+
+```{r}
+# a
+auto2004 <- read.table("data/auto2004_original.txt", header = TRUE, sep = "\t")
+
+# b
+auto2004_l3 <- read.table("data/auto2004_original_ligne3.txt", header = TRUE, sep = "\t", skip = 3)
+
+# c
+auto2004_sans_nom <- read.table("data/auto2004_sans_nom.txt", header = FALSE, sep = "\t",
+                                col.names = names(auto2004))
+
+# d
+auto2004_dm <- read.table("data/auto2004_don_manquante.txt", header = TRUE, sep = "\t")
+
+# e
+auto2004_d99 <- read.table("data/auto2004_don_manquan_99999.txt", header = TRUE, sep = "\t",
+                           na.strings = "99999")
+```

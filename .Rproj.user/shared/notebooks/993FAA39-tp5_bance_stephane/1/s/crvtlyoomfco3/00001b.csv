@@ -1,0 +1,4 @@
+"0","# a"
+"0","auto2004 <- read.table(""data/auto2004_original.txt"", header = TRUE, sep = ""\t"")"
+"2","Erreur dans file(file, ""rt"") : impossible d'ouvrir la connexion
+"

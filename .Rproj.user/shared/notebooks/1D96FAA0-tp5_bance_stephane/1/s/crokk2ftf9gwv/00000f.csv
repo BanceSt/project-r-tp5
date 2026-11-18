@@ -1,0 +1,6 @@
+"0","manquants <- which(is.na(auto2004_dm), arr.ind = TRUE)"
+"0","data.frame("
+"0","  Modele = auto2004$Modele[manquants[, ""row""]],"
+"0","  variable = names(auto2004)[manquants[, ""col""]],"
+"0","  valeur_originale = mapply(function(i, j) auto2004[i, j], manquants[, ""row""], manquants[, ""col""])"
+"0",")"
