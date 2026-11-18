@@ -9,6 +9,7 @@ output:
 ```{r setup, include=FALSE}
 library("readxl")
 library("tidyverse")
+library("haven")
 ```
 
 # Partie A : 
@@ -172,4 +173,91 @@ pluie2024_2025 <- bind_rows(pluie_2024, pluie_2025) %>%
 pluie2024_2025
 ```
 
+c.
+```{r}
+pluie_annee_station <- pluie2024_2025 |>
+  pivot_longer(
+    cols = -c(annee, station), 
+    names_to = "mois",
+    values_to = "pluie_mm"
+  ) |>
+  group_by(annee, station) |>
+  summarise(
+    pluie_totale = sum(pluie_mm, na.rm = TRUE),
+    .groups = "drop_last"
+  )
+pluie_annee_station
+```
 
+## B2
+
+a.
+```{r}
+pays <- read_sas("data/paysniv3.sas7bdat")
+pays_dims <- dim(pays)
+```
+Il y a `r pays_dims[1]` pays avec `r pays_dims[2]` variables
+
+```{r}
+colSums(is.na(pays)) %>% 
+  .[. > 0]
+```
+
+b.
+```{r}
+pays <- pays %>%
+  mutate(
+    CONTI = factor(CONTI, 
+                   levels = 1:5,
+                   labels = c("Afrique", "Asie", "Amériques", "Europe", "Océanie"))
+  )
+```
+
+c.
+```{r}
+pays |>
+  group_by(CONTI) |>
+  summarise(
+    pays = n(),
+    esperance_vie = mean(ESPER, na.rm = TRUE),
+    fecondite = mean(FERTI, na.rm = TRUE),
+    PNB_median = median(PNB, na.rm = TRUE),
+  ) |>
+  arrange(
+    esperance_vie
+  )
+```
+
+c.
+Tableau de 5 pays avec l'espèrance de vie la plus basse :
+```{r}
+top_5_pays_esper = pays |>
+  select(
+    NOM,
+    ESPER
+  ) |>
+  slice_min(order_by = ESPER, n = 5, with_ties = FALSE)
+top_5_pays_esper
+
+```
+
+## B3
+
+a.
+```{r}
+write.csv2(bilan_meteo, "sorties/bilan_meteo.csv", FALSE)
+```
+C'est le même tableau avec des erreurs d'encoding.
+
+b.
+```{r}
+writexl::write_xlsx(list(pluie = pluie2024_2025, bilan_meteo = bilan_meteo), "sorties/exports.xlsx") 
+
+```
+
+c.
+```{r}
+saveRDS(pays, "sorties/pays.rds")
+
+```
+En csv les facteurs, ne serait pas conserver.

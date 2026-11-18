@@ -1,0 +1,2 @@
+"0","pays <- read_sas(""data/paysniv3.sas7bdat"")"
+"0","pays_dims <- dim(pays)"

@@ -1,0 +1,3 @@
+"0","auto2024_d99_brut <- read.table(""data/auto2004_don_manquan_99999.txt"", header = TRUE, sep = ""\t"")"
+"0","moy_brute <- mean(auto2024_d99_brut$Puissance)"
+"0","moy_ref <- mean(auto2004$Puissance)"
