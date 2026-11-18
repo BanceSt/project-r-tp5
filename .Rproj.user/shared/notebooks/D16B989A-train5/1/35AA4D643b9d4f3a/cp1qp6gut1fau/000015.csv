@@ -1,0 +1,3 @@
+"0","library(""readxl"")"
+"0","library(""tidyverse"")"
+"0","auto_original<- read.delim(""data/auto2004_original_ligne3.txt"", skip = 3, header = TRUE, encoding = ""utf-8"")"

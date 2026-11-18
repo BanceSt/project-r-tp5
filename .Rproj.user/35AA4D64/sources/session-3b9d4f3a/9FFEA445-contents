@@ -1,0 +1,13 @@
+---
+title: "tp5_bance_stephane"
+author: "Stéphane BANCE"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+```{r setup, include=FALSE}
+library("readxl")
+library("tidyverse")
+```
+

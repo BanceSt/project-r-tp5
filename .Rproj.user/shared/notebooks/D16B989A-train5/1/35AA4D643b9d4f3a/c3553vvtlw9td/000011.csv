@@ -1,0 +1,3 @@
+"0","pluie25 |>"
+"0","  summarise(cumul = sum(precipitation), "
+"0","            .by = station)"

@@ -1,0 +1,12 @@
+"0","pluie25 |>"
+"0","  pivot_longer(cols = -station,"
+"0","               name_to = ""mois"","
+"0","               value_to = ""precipitation"")"
+"1","[1m[33mError[39m in `pivot_longer()`:[22m
+[38;5;232m[33m![38;5;232m Arguments in `...` must be used.
+[31m✖[38;5;232m Problematic arguments:
+[36m•[38;5;232m name_to = ""mois""
+[36m•[38;5;232m value_to = ""precipitation""
+[36mℹ[38;5;232m Did you misspell an argument name?[39m
+[90mRun `]8;;x-r-run:rlang::last_trace()rlang::last_trace()]8;;` to see where the error occurred.[39m
+"

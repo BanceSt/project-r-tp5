@@ -1,0 +1,2 @@
+"0","auto2004_don99999 <- read.delim(""data/auto2004_don_manquan_99999.txt"")"
+"0","mauto1 <- mean(auto2004_don99999[[""Puissance""]])"
