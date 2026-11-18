@@ -261,3 +261,52 @@ saveRDS(pays, "sorties/pays.rds")
 
 ```
 En csv les facteurs, ne serait pas conserver.
+
+# Partie C
+
+## C1
+
+.a
+```{r}
+pluie2024_2025_long = pluie2024_2025 |>
+  pivot_longer(
+    cols = -c(annee, station), 
+    names_to = "mois",
+    values_to = "mm"
+  )
+
+```
+
+.b
+```{r}
+pluie2024_2025_long <- pluie2024_2025_long |>
+  mutate(
+    mois = factor(mois, 
+                  levels = unique(pluie2024_2025_long$mois))
+  )
+
+```
+
+c.
+
+```{r}
+mois_plus_pluvieux <- pluie2024_2025_long |>
+  filter(annee == 2025) |>
+  group_by(station) |>
+  slice_max(order_by = mm, n = 1, with_ties = FALSE) |>
+  select(station, mois, mm)
+mois_plus_pluvieux
+```
+d.
+```{r}
+pluie2024_2025_long |>
+  pivot_wider(
+    names_from = annee, 
+    values_from = mm, 
+    names_prefix = "annee_" 
+  ) |>
+  mutate(
+    difference = annee_2025 - annee_2024
+  )
+```
+

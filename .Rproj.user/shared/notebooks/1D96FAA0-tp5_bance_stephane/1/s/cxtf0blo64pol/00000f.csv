@@ -1,0 +1,6 @@
+"0","mois_plus_pluvieux <- pluie2024_2025_long |>"
+"0","  filter(annee == 2025) |>"
+"0","  group_by(station) |>"
+"0","  slice_max(order_by = mm, n = 1, with_ties = FALSE) |>"
+"0","  select(station, mois, mm)"
+"0","mois_plus_pluvieux"

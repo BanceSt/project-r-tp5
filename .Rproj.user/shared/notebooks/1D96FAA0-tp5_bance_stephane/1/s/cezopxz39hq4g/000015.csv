@@ -1,0 +1,7 @@
+"0","pluie2024_2025_long = pluie2024_2025 |>"
+"0","  pivot_longer("
+"0","    cols = -c(annee, station), "
+"0","    names_to = ""mois"","
+"0","    values_to = ""mm"""
+"0","  )"
+"0",""
